@@ -1,0 +1,64 @@
+Kosrae Lagoon Hotel
+Overview
+Welcome to Kosrae Lagoon Hotel, your digital retreat to the peaceful, tropical paradise of Micronesia. This website offers a seamless experience for booking rooms, exploring accommodation options, and learning more about the pristine beauty of Kosrae Lagoon.
+
+This project was developed with HTML, CSS, and PHP, and focuses on providing an easy-to-navigate platform for hotel reservations and showcasing the beautiful rooms of the hotel. Whether you're planning a quick getaway or a long stay, Kosrae Lagoon Hotel ensures a memorable stay with modern amenities and the charm of nature.
+
+Project Structure
+Technologies Used
+HTML: To create the website's structure and content.
+CSS: For styling the layout and ensuring responsive design.
+PHP: Used to handle backend functionality, such as form submissions and booking processes.
+The project was started by designing the basic HTML structure, followed by styling the website with CSS. PHP was then incorporated to handle dynamic content and form actions for bookings.
+
+Features
+Room Booking Form: Easily reserve your room by selecting your check-in and check-out dates, room type, and additional features.
+Room Options: Displaying a variety of rooms including Budget, Standard, and Luxury options, each equipped with features to match different preferences.
+Calendar Integration: View room availability with a custom-built calendar interface showing booked dates.
+Responsive Design: The website adjusts beautifully to any screen size, ensuring an optimal user experience on mobile, tablet, and desktop devices.
+
+git clone https://github.com/your_username/kosrae-lagoon-hotel.git
+Install Required Dependencies:
+If you need any additional dependencies or frameworks, install them using your package manager. For this project, it uses PHP, so make sure your local server has it installed.
+
+Set Up the PHP Server:
+If you have PHP installed, you can run the PHP server directly from the root directory of the project:
+
+php -S localhost:8000
+This will start the local server and you can access the website at http://localhost:8000.
+
+Modify Configuration:
+If required, update any configurations or database credentials (if applicable) in the PHP files. The booking form will submit to a PHP backend that processes the booking details.
+
+Contributing
+Fork the Repository:
+Fork the repository to your GitHub account and make any necessary changes.
+
+Create a New Branch:
+Create a feature branch:
+
+git checkout -b feature/your-feature-name
+Make Changes:
+Make your desired changes to the project files.
+
+Commit Your Changes:
+Once your changes are complete, commit them to your branch:
+
+Copy code
+git commit -m "Description of your changes"
+Push Changes:
+Push the changes to your GitHub repository:
+
+
+git push origin feature/your-feature-name
+Create a Pull Request:
+Open a pull request to propose your changes.
+
+Acknowledgements
+Special thanks to the following for inspiration and resources:
+
+Kosrae Lagoon Hotel: The idea and concept behind the hotel and its serene environment.
+HTML, CSS, and PHP Documentation: Official documentation and tutorials were invaluable in guiding me through the development process.
+Author
+Luis Arranz Garcia
+Web Developer based in Göteborg
