@@ -16,7 +16,6 @@ try {
     exit();
 }
 
-// Function to check transfer code
 function checkTransferCode($bookingData)
 {
     $transferCode = $bookingData['transfercode'];
@@ -39,7 +38,6 @@ function checkTransferCode($bookingData)
     }
 }
 
-// Function to process payment
 function processPayment($transferCode, $username)
 {
     try {
@@ -48,7 +46,7 @@ function processPayment($transferCode, $username)
             'form_params' => [
                 'user' => $username,
                 'transferCode' => $transferCode,
-                'numberOfDays' => 3 // Example for testing. Adjust accordingly.
+                'numberOfDays' => 3
             ]
         ]);
         $body = (string) $res->getBody();
@@ -120,7 +118,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $transferCodeResponse = checkTransferCode($bookingData);  // Now this should work
 
-    // If the transfer code is invalid, show an error
     if (isset($transferCodeResponse['status']) && $transferCodeResponse['status'] !== 'success') {
         echo json_encode([
             'status' => 'error',
@@ -132,7 +129,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Step 2: Process the payment
     $paymentSuccess = processPayment($transferCode, 'Rune');  // Test user with api_key
 
-    // If payment fails, show an error
     if (!$paymentSuccess) {
         echo json_encode([
             'status' => 'error',
@@ -143,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Step 3: Insert the booking into the database
     try {
-        // Insert the booking data into the database
+
         $stmt = $database->prepare("INSERT INTO Bookings (RoomID, GuestName, CheckInDate, CheckOutDate, TotalCost, TransferCode) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$roomId, $guestName, $start_date, $end_date, $totalCost, $transferCode]);
 
@@ -151,11 +147,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $response = [
             'status' => 'success',
             'island' => 'Main island',
-            'hotel' => 'Centralhotellet',  // Hotel name
+            'hotel' => 'Centralhotellet',
             'arrival_date' => $start_date,
             'departure_date' => $end_date,
             'total_cost' => $totalCost,
-            'stars' => $roomData['cost'], // Mapping room cost to star rating
+            'stars' => $roomData['cost'],
             'features' => $selectedFeatures,
             'additional_info' => [
                 'greeting' => 'Thank you for choosing Centralhotellet!',
