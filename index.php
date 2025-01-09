@@ -9,6 +9,7 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
 ?>
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -43,7 +44,6 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
             <h2>Book your Nirvana here</h2>
             <div class="form">
                 <div class="booking-form">
-
                     <form action="booking.php" method="post">
                         <div class="content-section">
                             <div class="form-row">
@@ -59,14 +59,15 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
                                     <input type="date" id="end" name="end-date" min="2025-01-02" max="2025-01-31" value="2025-01-02">
                                 </div>
                             </div>
+
                             <div class="form-row">
                                 <!-- Room Selection -->
                                 <div class="section-form">
                                     <label for="standard">Room:</label>
-                                    <select name="room" id="standard">
-                                        <option value="Budget">Code and Rest (Simple)</option>
-                                        <option value="Standard">Syntax & Serenity (Medium)</option>
-                                        <option value="Luxury">Elite & Escape (Sublime)</option>
+                                    <select name="room" id="standard" onchange="updateTotalCost()">
+                                        <option value="Budget" data-price="1">Code and Rest (Simple) - 1</option>
+                                        <option value="Standard" data-price="2">Syntax & Serenity (Medium) - 2</option>
+                                        <option value="Luxury" data-price="4">Elite & Escape (Sublime) - 4</option>
                                     </select>
                                 </div>
 
@@ -77,49 +78,46 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
                                 </div>
                             </div>
                         </div>
-                        <!-- NEW Additional Fields  NEW thursday-->
+
+                        <!-- NEW Additional Fields -->
                         <div class="content-section">
-                            <!-- NEWGuest NameNEW thursday -->
+                            <!-- Guest Name -->
                             <div class="section-form">
                                 <label for="guestName">Guest Name: </label>
                                 <input name="guestName" type="text" id="guestName" required>
                             </div>
 
+                            <!-- Features (Checkboxes for Minibar, TV-satellite, Gym) -->
+                            <div class="section-form">
+                                <label>Features:</label>
+                                <div class="feature">
+                                    <input type="checkbox" name="feature1" id="feature1" value="Minibar" onchange="updateTotalCost()">
+                                    <label for="feature1">Minibar (1)</label>
+                                </div>
+                                <div class="feature">
+                                    <input type="checkbox" name="feature2" id="feature2" value="TV-satellite" onchange="updateTotalCost()">
+                                    <label for="feature2">TV-satellite (1)</label>
+                                </div>
+                                <div class="feature">
+                                    <input type="checkbox" name="feature3" id="feature3" value="Gym" onchange="updateTotalCost()">
+                                    <label for="feature3">Gym (1)</label>
+                                </div>
+                            </div>
+
                             <!-- Total Cost -->
                             <div class="section-form">
                                 <label for="totalCost">Total Cost: </label>
-                                <input name="totalCost" type="number" id="totalCost" value="100" min="1" required>
+                                <input name="totalCost" type="number" id="totalCost" value="1" min="1" required readonly>
                             </div>
                         </div>
 
-                        <!-- Room Features -->
-                        <div class="content-section">
-                            <fieldset>
-                                <legend>Features</legend>
-                                <div class="feature">
-                                    <label for="feature1">Minibar: </label>
-                                    <input name="feature1" type="checkbox" id="feature1" value="Coffeemaker">
-                                </div>
-
-                                <div class="feature">
-                                    <label for="feature2">TV-satelite: </label>
-                                    <input name="feature2" type="checkbox" id="feature2" value="TV">
-                                </div>
-
-                                <div class="feature">
-                                    <label for="feature3">Gym: </label>
-                                    <input name="feature3" type="checkbox" id="feature3" value="Minibar">
-                                </div>
-                            </fieldset>
-                        </div>
-
                         <!-- Submit Button -->
-                        <input id="submitBtn" type="submit" value="Book" />
+                        <div class="section-form">
+                            <button type="submit">Book Now</button>
+                        </div>
                     </form>
-                </div>
-            </div>
-        </section>
 
+        </section>
         <!-- Rooms Section -->
         <section class="rooms">
             <h2>Our Rooms</h2>
@@ -286,7 +284,25 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
     <footer>
         <span>&copy; 2025 Kosrae Lagoon. All Rights Reserved.</span>
     </footer>
+    <script>
+        // Function to update the total cost dynamically based on selected features
+        function updateTotalCost() {
+            let totalCost = 0;
 
+            // Room price
+            const roomSelect = document.getElementById('standard');
+            totalCost += parseInt(roomSelect.options[roomSelect.selectedIndex].dataset.price);
+
+            // Feature prices (1 each)
+            if (document.getElementById('feature1').checked) totalCost += 1; // Minibar
+            if (document.getElementById('feature2').checked) totalCost += 1; // TV-satellite
+            if (document.getElementById('feature3').checked) totalCost += 1; // Gym
+
+            // Update the total cost input field
+            document.getElementById('totalCost').value = totalCost;
+        }
+    </script>
 </body>
+
 
 </html>
