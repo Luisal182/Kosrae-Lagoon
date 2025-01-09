@@ -77,6 +77,20 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
                                 </div>
                             </div>
                         </div>
+                        <!-- NEW Additional Fields  NEW thursday-->
+                        <div class="content-section">
+                            <!-- NEWGuest NameNEW thursday -->
+                            <div class="section-form">
+                                <label for="guestName">Guest Name: </label>
+                                <input name="guestName" type="text" id="guestName" required>
+                            </div>
+
+                            <!-- Total Cost -->
+                            <div class="section-form">
+                                <label for="totalCost">Total Cost: </label>
+                                <input name="totalCost" type="number" id="totalCost" value="100" min="1" required>
+                            </div>
+                        </div>
 
                         <!-- Room Features -->
                         <div class="content-section">

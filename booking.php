@@ -1,91 +1,179 @@
 <?php
+require __DIR__ . '/vendor/autoload.php';
 
-$pdo = new PDO('sqlite:Kosrae_lagoon.db');
-$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+use GuzzleHttp\Exception\ClientException;
 
-// Variables to store error messages
-$errorMessages = [];
+// Database connection
+try {
+    $database = new PDO('sqlite:Kosrae_lagoon.db');
+    $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Database connection failed: ' . $e->getMessage()
+    ]);
+    exit();
+}
 
-// Check if form is submitted
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $startDate = $_POST['start-date'];
-    $endDate = $_POST['end-date'];
-    $roomID = $_POST['room'];  // Now using room ID directly
-    $transferCode = $_POST['transferCode'];
-    $features = [];
+// Function to check transfer code
+function checkTransferCode($bookingData)
+{
+    $transferCode = $bookingData['transfercode'];
+    $totalCost = $bookingData['totalcost'];
 
-    // Get features from the form
-    if (isset($_POST['feature1'])) {
-        $features[] = 'Coffeemaker';
+    try {
+        $client = new GuzzleHttp\Client(['verify' => false]);
+        $res = $client->request('POST', 'https://yrgopelago.se/centralbank/transferCode', [
+            'form_params' => [
+                'transferCode' => $transferCode,
+                'totalcost' => $totalCost
+            ]
+        ]);
+        $body = (string) $res->getBody();
+        return json_decode($body, true);
+    } catch (ClientException $e) {
+        $response = $e->getResponse();
+        $errorContent = $response->getBody()->getContents();
+        return json_decode($errorContent, true);
     }
-    if (isset($_POST['feature2'])) {
-        $features[] = 'TV';
+}
+
+// Function to process payment
+function processPayment($transferCode, $username)
+{
+    try {
+        $client = new GuzzleHttp\Client(['verify' => false]);
+        $res = $client->request('POST', 'https://yrgopelago.se/centralbank/deposit', [
+            'form_params' => [
+                'user' => $username,
+                'transferCode' => $transferCode,
+                'numberOfDays' => 3
+            ]
+        ]);
+        $body = (string) $res->getBody();
+        $responseBody = json_decode($body, true);
+        return isset($responseBody['status']) && $responseBody['status'] === 'success';
+    } catch (ClientException $e) {
+        error_log('Error processing payment: ' . $e->getMessage());
+        return false;
     }
-    if (isset($_POST['feature3'])) {
-        $features[] = 'Gym';
-    }
+}
 
-    // Basic validation for dates
-    if (empty($startDate) || empty($endDate)) {
-        $errorMessages[] = "Check-in and check-out dates are required.";
-    } elseif ($startDate >= $endDate) {
-        $errorMessages[] = "Check-out date must be later than check-in date.";
-    }
+// If the form is submitted
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
-    // Check if room is available
-    if (empty($errorMessages)) {
-        try {
-            $stmt = $pdo->prepare("SELECT * FROM Bookings WHERE RoomID = ? AND (CheckInDate < ? AND CheckOutDate > ?)");
-            $stmt->execute([$roomID, $startDate, $endDate]);
-            if ($stmt->rowCount() > 0) {
-                $errorMessages[] = "The selected room is already booked during those dates.";
-            }
+    // Collect form data safely using isset to avoid warnings
+    $room = isset($_POST['room']) ? $_POST['room'] : '';
+    $start_date = isset($_POST['start-date']) ? $_POST['start-date'] : '';
+    $end_date = isset($_POST['end-date']) ? $_POST['end-date'] : '';
+    $guestName = isset($_POST['guestName']) ? $_POST['guestName'] : '';
+    $transferCode = isset($_POST['transfeCode']) ? $_POST['transferCode'] : '';
+    $totalCost = isset($_POST['totalCost']) ? $_POST['totalCost'] : 0;
 
-            // If no errors, proceed with booking
-            if (empty($errorMessages)) {
-                $guestName = "Guest Name";
-                $stmt = $pdo->prepare("INSERT INTO Bookings (RoomID, GuestName, CheckInDate, CheckOutDate) VALUES (?, ?, ?, ?)");
-                $stmt->execute([$roomID, $guestName, $startDate, $endDate]);
-
-                // Insert features into RoomFeatures table
-                foreach ($features as $featureName) {
-                    $stmt = $pdo->prepare("SELECT id FROM Features WHERE FeatureName = ?");
-                    $stmt->execute([$featureName]);
-                    $feature = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                    if ($feature) {
-                        $featureID = $feature['id'];
-                        $stmt = $pdo->prepare("INSERT INTO RoomFeatures (RoomID, FeatureID) VALUES (?, ?)");
-                        $stmt->execute([$roomID, $featureID]);
-                    }
-                }
-
-                // Prepare JSON response for successful booking
-                $response = [
-                    "island" => "Kosrae Lagoon",
-                    "hotel" => "Kosrae Lagoon Hotel",
-                    "arrival_date" => $startDate,
-                    "departure_date" => $endDate,
-                    "room" => $roomID,
-                    "features" => $features,
-                    "message" => "Thank you for booking with us!",
-                ];
-
-                // Send the JSON response
-                header('Content-Type: application/json');
-                echo json_encode($response);
-                exit();
-            }
-        } catch (PDOException $e) {
-            $errorMessages[] = "Error processing your reservation. Please try again later.";
-            echo json_encode(["error" => $errorMessages]);
-            exit();
-        }
-    } else {
-        echo json_encode(["error" => $errorMessages]);
+    // Validate that all necessary fields are present
+    if (empty($room) || empty($start_date) || empty($end_date) || empty($guestName) || empty($transferCode) || $totalCost <= 0) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'All fields are required, and total cost must be greater than 0.'
+        ]);
         exit();
     }
+
+    // Create the booking data array
+    $bookingData = [
+        'transfercode' => $transferCode,
+        'totalcost' => $totalCost
+    ];
+
+    // Step 1: Check transfer code validity
+    $transferCodeResponse = checkTransferCode($bookingData);
+
+    // If the transfer code is invalid, show an error
+    if (isset($transferCodeResponse['status']) && $transferCodeResponse['status'] !== 'success') {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Transfer code validation failed: ' . (isset($transferCodeResponse['message']) ? $transferCodeResponse['message'] : 'Unknown error')
+        ]);
+        exit();
+    }
+
+    // Step 2: Process the payment
+    $paymentSuccess = processPayment($transferCode, $guestName);
+
+    if (!$paymentSuccess) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Payment failed. Please try again.'
+        ]);
+        exit();
+    }
+
+    // Step 3: Insert the booking into the database
+    try {
+
+        $roomIdMap = [
+            'Budget' => ['id' => 1, 'name' => 'Code and Rest (Simple)', 'cost' => 1],
+            'Standard' => ['id' => 2, 'name' => 'Syntax & Serenity (Medium)', 'cost' => 2],
+            'Luxury' => ['id' => 3, 'name' => 'Elite & Escape (Sublime)', 'cost' => 4]
+        ];
+
+        // Check if the selected room is valid
+        if (!isset($roomIdMap[$room])) {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'Invalid room selection.'
+            ]);
+            exit();
+        }
+
+        // Room data from the map
+        $roomData = $roomIdMap[$room];
+        $roomId = $roomData['id'];
+
+        // Insert the booking data into the database
+        $stmt = $database->prepare("INSERT INTO Bookings (RoomID, GuestName, CheckInDate, CheckOutDate, TotalCost, TransferCode) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$roomId, $guestName, $start_date, $end_date, $totalCost, $transferCode]);
+
+        // Create the JSON response
+        $response = [
+            'status' => 'success',
+            'island' => 'Main island',
+            'hotel' => 'Centralhotellet',  // Hotel name
+            'arrival_date' => $start_date,
+            'departure_date' => $end_date,
+            'total_cost' => $totalCost,
+            'stars' => $roomData['cost'], // Mapping room cost to star rating
+            'features' => [],
+            'additional_info' => [
+                'greeting' => 'Thank you for choosing Centralhotellet!',
+                'imageUrl' => 'https://upload.wikimedia.org/wikipedia/commons/e/e2/Hotel_Boscolo_Exedra_Nice.jpg'
+            ]
+        ];
+
+        // Add features for the selected room type
+        // For simplicity, assume all rooms come with some basic features (e.g., sauna, gym, etc.)
+        // You can fetch these from the database dynamically if needed
+        $features = [];
+        if ($room == 'Standard' || $room == 'Luxury') {
+            $features[] = ['name' => 'Gym', 'cost' => 2];
+        }
+        if ($room == 'Luxury') {
+            $features[] = ['name' => 'Pool', 'cost' => 2];
+        }
+        $response['features'] = $features;
+
+        // Return the response as JSON
+        echo json_encode($response);
+    } catch (PDOException $e) {
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Booking failed: ' . $e->getMessage()
+        ]);
+    }
 } else {
-    header("Location: index.php");
-    exit();
+    // Return error if not a POST request
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Invalid request method.'
+    ]);
 }
