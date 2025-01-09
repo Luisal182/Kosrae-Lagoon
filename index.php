@@ -284,24 +284,9 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
     <footer>
         <span>&copy; 2025 Kosrae Lagoon. All Rights Reserved.</span>
     </footer>
-    <script>
-        // Function to update the total cost dynamically based on selected features
-        function updateTotalCost() {
-            let totalCost = 0;
 
-            // Room price
-            const roomSelect = document.getElementById('standard');
-            totalCost += parseInt(roomSelect.options[roomSelect.selectedIndex].dataset.price);
+    <script src="script.js"></script>
 
-            // Feature prices (1 each)
-            if (document.getElementById('feature1').checked) totalCost += 1; // Minibar
-            if (document.getElementById('feature2').checked) totalCost += 1; // TV-satellite
-            if (document.getElementById('feature3').checked) totalCost += 1; // Gym
-
-            // Update the total cost input field
-            document.getElementById('totalCost').value = totalCost;
-        }
-    </script>
 </body>
 
 
