@@ -3,8 +3,6 @@ require __DIR__ . '/vendor/autoload.php';
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
-use PDO;
-use PDOException;
 
 // Database connection (ensure you have a valid SQLite or other DB connection)
 try {
@@ -50,7 +48,7 @@ function processPayment($transferCode, $username)
             'form_params' => [
                 'user' => $username,
                 'transferCode' => $transferCode,
-                'numberOfDays' => 3
+                'numberOfDays' => 3 // Example for testing. Adjust accordingly.
             ]
         ]);
         $body = (string) $res->getBody();
@@ -132,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Step 2: Process the payment
-    $paymentSuccess = processPayment($transferCode, $guestName);
+    $paymentSuccess = processPayment($transferCode, 'Rune');  // Test user with api_key
 
     // If payment fails, show an error
     if (!$paymentSuccess) {
