@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // References to the form elements
     const roomSelect = document.getElementById('room');
     const feature1 = document.getElementById('feature1');
     const feature2 = document.getElementById('feature2');
@@ -72,8 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to submit the form using Fetch (AJAX)
     function submitForm(event) {
-        event.preventDefault();  // Prevent the default behavior (reloading the page)
-
+        event.preventDefault();  
         // First, validate the dates
         if (!validateDates()) {
             return;  // If the dates are not valid, do not submit the form
@@ -91,20 +89,19 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.status === 'success') {
                 alert('Booking successful');
-                window.location.href = 'index.php'; // Redirect to the main page
+                window.location.href = 'index.php'; 
             } else {
-                alert('Error: ' + data.message); // Show error message
+                alert('Error: ' + data.message);
             }
         })
         .catch(error => {
             alert('There was an error processing the booking.');
-            console.error(error);  // Log error to console
+            console.error(error); 
         });
     }
 
     // Attach the submit form event to the submitForm function
     bookingForm.addEventListener('submit', submitForm);
 
-    // Call the function to update the total cost when the page loads
     updateTotalCost();
 });
