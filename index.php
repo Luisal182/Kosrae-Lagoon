@@ -1,14 +1,10 @@
 <?php
-
 require 'vendor/autoload.php';
 
 use GuzzleHttp\Client;
 
 $database = new PDO('sqlite:Kosrae_lagoon.db');
-
 ?>
-
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -44,27 +40,27 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
             <h2>Book your Nirvana here</h2>
             <div class="form">
                 <div class="booking-form">
-                    <form action="booking.php" method="post">
+                    <form id="bookingForm" action="booking.php" method="post">
                         <div class="content-section">
                             <div class="form-row">
                                 <!-- Check-in Date -->
                                 <div class="section-form">
-                                    <label for="start">Check-in Date: </label>
-                                    <input type="date" id="start" name="start-date" min="2025-01-01" max="2025-01-31" value="2025-01-01">
+                                    <label for="start-date">Check-in Date: </label>
+                                    <input type="date" id="start-date" name="start-date" min="2025-01-01" max="2025-01-31" value="2025-01-01">
                                 </div>
 
                                 <!-- Check-out Date -->
                                 <div class="section-form">
-                                    <label for="end">Check-out Date: </label>
-                                    <input type="date" id="end" name="end-date" min="2025-01-02" max="2025-01-31" value="2025-01-02">
+                                    <label for="end-date">Check-out Date: </label>
+                                    <input type="date" id="end-date" name="end-date" min="2025-01-02" max="2025-01-31" value="2025-01-02">
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <!-- Room Selection -->
                                 <div class="section-form">
-                                    <label for="standard">Room:</label>
-                                    <select name="room" id="standard" onchange="updateTotalCost()">
+                                    <label for="room">Room:</label>
+                                    <select name="room" id="room" onchange="updateTotalCost()">
                                         <option value="Budget" data-price="1">Code and Rest (Simple) - 1</option>
                                         <option value="Standard" data-price="2">Syntax & Serenity (Medium) - 2</option>
                                         <option value="Luxury" data-price="4">Elite & Escape (Sublime) - 4</option>
@@ -79,7 +75,7 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
                             </div>
                         </div>
 
-                        <!-- NEW Additional Fields -->
+                        <!-- Additional Fields -->
                         <div class="content-section">
                             <!-- Guest Name -->
                             <div class="section-form">
@@ -116,7 +112,11 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
                             <button type="submit">Book Now</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </section>
 
+        <!-- Rooms Section -->
         </section>
         <!-- Rooms Section -->
         <section class="rooms">
@@ -285,9 +285,9 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
         <span>&copy; 2025 Kosrae Lagoon. All Rights Reserved.</span>
     </footer>
 
+    <!-- JavaScript -->
     <script src="script.js"></script>
 
 </body>
-
 
 </html>
