@@ -1,0 +1,44 @@
+footer {
+    background-color: #104de9;
+    width: 100%;
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+}
+
+footer span {
+    color: #fff;
+    font-size: 1rem;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .room {
+        padding: 15px;
+    }
+    .roomImg {
+        height: 300px; 
+    }
+
+    .roomInfo h3 {
+        font-size: 1.5rem;
+    }
+
+    .roomInfo p {
+        font-size: 0.9rem;
+    }
+
+    .booked-dates li {
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    .booking-form {
+        flex-direction: column;
+        align-items: stretch; 
+    }
+
+    .section-form {
+        flex-basis: 100%;
+    }
+}
