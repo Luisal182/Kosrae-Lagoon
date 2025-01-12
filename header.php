@@ -8,6 +8,7 @@
     <title>Kosrae Lagoon</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="footer.css">
+    <link rel="stylesheet" href="header.css">
 </head>
 
 <body>

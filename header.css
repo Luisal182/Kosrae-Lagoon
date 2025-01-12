@@ -1,0 +1,39 @@
+#header-title {
+    position: relative;
+    background: url('images/hero2.jpg') no-repeat center center;
+    background-size: cover;
+    color: #fff;
+    height: 80vh; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+nav h1 {
+    font-weight: 300;
+    font-size: 3rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.hero .press-hotel h2 {
+    font-size: 2rem;
+    margin: 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.hero .press-hotel h3 {
+    font-size: 1.5rem;
+    margin-top: 10px;
+}
+
+.hero img {
+    width: 70%;
+    height: 60%;
+    object-fit: cover;
+    border: 5px solid rgba(0, 0, 0, 0.2); /* Thin border with slight opacity */
+    border-radius: 20px; 
+    opacity: 1; 
+    z-index: 0; 
+}
