@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 require __DIR__ . '/vendor/autoload.php';
 
 use GuzzleHttp\Client;
@@ -210,4 +212,3 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Return the response as JSON
     echo json_encode($response);
 }
-?>
