@@ -1,4 +1,6 @@
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Get all required form elements
     const roomSelect = document.getElementById('room');
     const feature1 = document.getElementById('feature1');
     const feature2 = document.getElementById('feature2');
@@ -6,102 +8,106 @@ document.addEventListener('DOMContentLoaded', function() {
     const startDate = document.getElementById('start-date');
     const endDate = document.getElementById('end-date');
     const totalCostInput = document.getElementById('totalCost');
-    const transferCodeInput = document.getElementById('transferCode');
     const bookingForm = document.getElementById('bookingForm');
-
+    
     // Function to update the total cost
     function updateTotalCost() {
         let totalCost = 0;
-
-        // Room price
+        
+        // Get base room price
         const selectedRoom = roomSelect.options[roomSelect.selectedIndex];
-        totalCost += parseInt(selectedRoom.dataset.price);
-
-        // Feature prices (1 for each)
-        if (feature1.checked) totalCost += 1;
-        if (feature2.checked) totalCost += 1;
-        if (feature3.checked) totalCost += 1;
-
+        const roomPrice = parseInt(selectedRoom.dataset.price);
+        
+        // Calculate number of days if dates are set
+        let numberOfDays = 1;
+        if (startDate.value && endDate.value) {
+            const start = new Date(startDate.value);
+            const end = new Date(endDate.value);
+            numberOfDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+            if (numberOfDays < 1) numberOfDays = 1;
+        }
+        
+        // Calculate total with duration
+        totalCost = roomPrice * numberOfDays;
+        
+        // Add features (each costs 1)
+        if (feature1.checked) totalCost += 1; // Minibar
+        if (feature2.checked) totalCost += 1; // TV-satellite
+        if (feature3.checked) totalCost += 1; // Gym
+        
         // Update the total cost field
         totalCostInput.value = totalCost;
     }
 
-    // Recalculate the total cost whenever options change
+    // Function to validate the dates
+    function validateDates() {
+        const startDateValue = new Date(startDate.value);
+        const endDateValue = new Date(endDate.value);
+        
+        // Check if end date is after start date
+        if (endDateValue <= startDateValue) {
+            alert('The check-out date must be after the check-in date.');
+            return false;
+        }
+
+        // Get selected room type to check availability
+        const selectedRoom = roomSelect.value.toLowerCase();
+        const roomCalendar = document.querySelector(`#${selectedRoom} .booked-dates`);
+        
+        if (!roomCalendar) {
+            console.error('Room calendar not found');
+            return false;
+        }
+
+        // Get all booked dates for the selected room
+        const bookedDates = roomCalendar.querySelectorAll('.booked');
+        const selectedDates = [];
+        
+        // Create array of selected dates
+        let currentDate = new Date(startDateValue);
+        while (currentDate <= endDateValue) {
+            selectedDates.push(currentDate.getDate());
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        // Check if any selected date is booked
+        for (let bookedDate of bookedDates) {
+            const bookedDay = parseInt(bookedDate.textContent);
+            if (selectedDates.includes(bookedDay)) {
+                alert('One or more selected dates are already booked. Please choose different dates.');
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Add event listeners for all elements that affect the total cost
     roomSelect.addEventListener('change', updateTotalCost);
     feature1.addEventListener('change', updateTotalCost);
     feature2.addEventListener('change', updateTotalCost);
     feature3.addEventListener('change', updateTotalCost);
+    startDate.addEventListener('change', updateTotalCost);
+    endDate.addEventListener('change', updateTotalCost);
 
-    // Function to validate the dates before submitting the form
-    function validateDates() {
-        const startDateValue = new Date(startDate.value);
-        const endDateValue = new Date(endDate.value);
-        const today = new Date();
-
-        // Check that the start date is not earlier than the current date
-        if (startDateValue < today) {
-            alert('The start date cannot be earlier than the current date.');
-            return false;
-        }
-
-        // Check that the end date is later than the start date
-        if (endDateValue <= startDateValue) {
-            alert('The end date must be later than the start date.');
-            return false;
-        }
-
-        // If everything is fine, return true
-        return true;
-    }
-
-    // Function to handle the transfer code
-    function setTransferCode() {
-        const transferCode = prompt('Please enter the generated transfer code:');
+    // Form submission handler
+    bookingForm.addEventListener('submit', function(event) {
+        event.preventDefault();
         
-        // If the transfer code is valid, insert it into the appropriate field
-        if (transferCode && transferCode.trim() !== '') {
-            transferCodeInput.value = transferCode;
-        } else {
-            alert('The transfer code is required.');
-        }
-    }
-
-    // Call to request the transfer code when the form is ready
-    document.getElementById('generate-transfer-code').addEventListener('click', setTransferCode);
-
-    // Function to submit the form using Fetch (AJAX)
-    function submitForm(event) {
-        event.preventDefault();  
-        // First, validate the dates
+        // Validate dates before submitting
         if (!validateDates()) {
-            return;  // If the dates are not valid, do not submit the form
+            return;
         }
+        
+        // Disable submit button and show loading state
+        const submitButton = bookingForm.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Processing...';
+        
+        // Submit the form
+        bookingForm.submit();
+    });
 
-        // Create a FormData object with all the form data
-        const formData = new FormData(bookingForm);
-
-        // Use fetch to send the data to the backend without reloading the page
-        fetch('booking.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                alert('Booking successful');
-                window.location.href = 'index.php'; 
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            alert('There was an error processing the booking.');
-            console.error(error); 
-        });
-    }
-
-    // Attach the submit form event to the submitForm function
-    bookingForm.addEventListener('submit', submitForm);
-
+    // Initialize total cost when page loads
     updateTotalCost();
 });
