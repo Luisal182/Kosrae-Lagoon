@@ -9,8 +9,6 @@ use GuzzleHttp\Client;
 $database = new PDO('sqlite:Kosrae_lagoon.db');
 ?>
 
-
-
 <!-- Header Section -->
 <header id="header-title">
     <nav>
