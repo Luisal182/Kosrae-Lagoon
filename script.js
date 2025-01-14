@@ -111,3 +111,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize total cost when page loads
     updateTotalCost();
 });
+
+//-------------------Nuevo martes-------------------------//
+// Reemplaza la parte del form submission handler con esto:
+bookingForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    
+    // Validate dates before submitting
+    if (!validateDates()) {
+        return;
+    }
+    
+    // Disable submit button and show loading state
+    const submitButton = bookingForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Processing...';
+    
+    // Prepare the data according to the API requirements
+    const requestData = {
+        user: document.getElementById('guestName').value,
+        api_key: document.getElementById('transferCode').value,
+        amount: parseInt(document.getElementById('totalCost').value)
+    };
+
+    // Make POST request to booking.php
+    fetch('booking.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            alert('Booking successful!');
+            window.location.href = 'index.php'; // Redirect on success
+        } else if (data.error) {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('There was an error processing your booking. Please try again.');
+    })
+    .finally(() => {
+        // Re-enable the submit button
+        submitButton.disabled = false;
+        submitButton.textContent = 'Book Now';
+    });
+});
