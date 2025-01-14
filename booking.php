@@ -63,6 +63,8 @@ function checkTransferCode($transferCode, $totalCost)
         $body = (string) $response->getBody();
         $data = json_decode($body, true);
 
+        //-------------var_dump($data);
+
         return isset($data['status']) && $data['status'] == 'success'; // Verifies transfer code
     } catch (ClientException $e) {
         return false;
@@ -134,6 +136,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['feature3'])) {
         $selectedFeatures[] = 'Gym';
     }
+
+    // ----------Depuración: Ver los valores de las variables recibidas del formulario
+    //var_dump($room, $start_date, $end_date, $guestName, $transferCode, $totalCost, $selectedFeatures);
 
     // Validate that all necessary fields are present
     if (empty($room) || empty($start_date) || empty($end_date) || empty($guestName) || empty($transferCode)) {
