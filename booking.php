@@ -196,15 +196,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Step 4: Return success response
     $response = [
         'status' => 'success',
-        'island' => 'Main island',
-        'hotel' => 'Centralhotellet',
+        'island' => 'Kosrae',
+        'hotel' => 'Kosrae-Lagoon',
         'arrival_date' => $start_date,
         'departure_date' => $end_date,
         'total_cost' => $totalCost,
         'stars' => $roomData['cost'],
         'features' => $selectedFeatures,
         'additional_info' => [
-            'greeting' => 'Thank you for choosing Centralhotellet!',
+            'greeting' => 'Thank you for choosing Kosrae Lagoon Hotel!',
             'imageUrl' => 'https://upload.wikimedia.org/wikipedia/commons/e/e2/Hotel_Boscolo_Exedra_Nice.jpg'
         ]
     ];
