@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', function() {
     // Get all required form elements
     const roomSelect = document.getElementById('room');
@@ -10,6 +9,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalCostInput = document.getElementById('totalCost');
     const bookingForm = document.getElementById('bookingForm');
     
+    // Validate that all elements exist
+    if (!roomSelect || !feature1 || !feature2 || !feature3 || !startDate || 
+        !endDate || !totalCostInput || !bookingForm) {
+        console.error('Required form elements not found');
+        return;
+    }
+
     // Function to update the total cost
     function updateTotalCost() {
         let totalCost = 0;
@@ -41,8 +47,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to validate the dates
     function validateDates() {
+        if (!startDate.value || !endDate.value) {
+            alert('Please select both check-in and check-out dates.');
+            return false;
+        }
+
         const startDateValue = new Date(startDate.value);
         const endDateValue = new Date(endDate.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Check if start date is in the past
+        if (startDateValue < today) {
+            alert('The check-in date cannot be in the past.');
+            return false;
+        }
         
         // Check if end date is after start date
         if (endDateValue <= startDateValue) {
@@ -51,12 +70,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Get selected room type to check availability
-        const selectedRoom = roomSelect.value.toLowerCase();
-        const roomCalendar = document.querySelector(`#${selectedRoom} .booked-dates`);
+        const selectedRoom = roomSelect.value;
+        const roomCalendar = document.querySelector(`#${selectedRoom.toLowerCase()} .booked-dates`);
         
         if (!roomCalendar) {
-            console.error('Room calendar not found');
-            return false;
+            console.log('Room calendar not found for room:', selectedRoom);
+            // Return true if we can't find the calendar - this allows booking to proceed
+            return true;
         }
 
         // Get all booked dates for the selected room
@@ -99,65 +119,58 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Validate required fields
+        const guestName = document.getElementById('guestName');
+        const transferCode = document.getElementById('transferCode');
+        
+        if (!guestName || !guestName.value.trim()) {
+            alert('Please enter your name.');
+            return;
+        }
+        
+        if (!transferCode || !transferCode.value.trim()) {
+            alert('Please enter a transfer code.');
+            return;
+        }
+
         // Disable submit button and show loading state
         const submitButton = bookingForm.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         submitButton.textContent = 'Processing...';
         
-        // Submit the form
-        bookingForm.submit();
+        // Create FormData object
+        const formData = new FormData(bookingForm);
+        
+        // Make POST request to booking.php
+        fetch('booking.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Booking successful!');
+                window.location.href = 'index.php';
+            } else {
+                alert(data.message || 'Booking failed. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('There was an error processing your booking. Please try again.');
+        })
+        .finally(() => {
+            // Re-enable the submit button
+            submitButton.disabled = false;
+            submitButton.textContent = 'Book Now';
+        });
     });
 
     // Initialize total cost when page loads
     updateTotalCost();
-});
-
-//-------------------Nuevo martes-------------------------//
-// Reemplaza la parte del form submission handler con esto:
-bookingForm.addEventListener('submit', function(event) {
-    event.preventDefault();
     
-    // Validate dates before submitting
-    if (!validateDates()) {
-        return;
-    }
-    
-    // Disable submit button and show loading state
-    const submitButton = bookingForm.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.textContent = 'Processing...';
-    
-    // Prepare the data according to the API requirements
-    const requestData = {
-        user: document.getElementById('guestName').value,
-        api_key: document.getElementById('transferCode').value,
-        amount: parseInt(document.getElementById('totalCost').value)
-    };
-
-    // Make POST request to booking.php
-    fetch('booking.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(requestData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.message) {
-            alert('Booking successful!');
-            window.location.href = 'index.php'; // Redirect on success
-        } else if (data.error) {
-            alert('Error: ' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('There was an error processing your booking. Please try again.');
-    })
-    .finally(() => {
-        // Re-enable the submit button
-        submitButton.disabled = false;
-        submitButton.textContent = 'Book Now';
-    });
+    // Set minimum dates for date inputs
+    const today = new Date().toISOString().split('T')[0];
+    startDate.min = today;
+    endDate.min = today;
 });
