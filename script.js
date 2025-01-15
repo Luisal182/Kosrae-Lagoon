@@ -113,7 +113,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form submission handler
     bookingForm.addEventListener('submit', function(event) {
         event.preventDefault();
-        
+        // Verifica si validateDates está disponible
+        console.log('validateDates function:', typeof validateDates);
         // Validate dates before submitting
         if (!validateDates()) {
             return;
