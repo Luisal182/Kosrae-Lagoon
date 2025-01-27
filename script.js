@@ -1,159 +1,127 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Get all required form elements
+ 
     const roomSelect = document.getElementById('room');
     const feature1 = document.getElementById('feature1');
     const feature2 = document.getElementById('feature2');
     const feature3 = document.getElementById('feature3');
     const startDate = document.getElementById('start-date');
     const endDate = document.getElementById('end-date');
-    const totalCostInput = document.getElementById('totalCost');
     const bookingForm = document.getElementById('bookingForm');
+    const totalCostInput = document.getElementById('totalCost');
+    const submitButton = bookingForm.querySelector('button[type="submit"]');
     
-    // Validate that all elements exist
-    if (!roomSelect || !feature1 || !feature2 || !feature3 || !startDate || 
-        !endDate || !totalCostInput || !bookingForm) {
+    // Ensure all elements exist
+    if (!roomSelect || !feature1 || !feature2 || !feature3 || !startDate || !endDate || !totalCostInput || !bookingForm || !submitButton) {
         console.error('Required form elements not found');
         return;
     }
 
-    // Function to update the total cost
-    function updateTotalCost() {
-        let totalCost = 0;
-        
-        // Get base room price
-        const selectedRoom = roomSelect.options[roomSelect.selectedIndex];
-        const roomPrice = parseInt(selectedRoom.dataset.price);
-        
-        // Calculate number of days if dates are set
-        let numberOfDays = 1;
-        if (startDate.value && endDate.value) {
-            const start = new Date(startDate.value);
-            const end = new Date(endDate.value);
-            numberOfDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-            if (numberOfDays < 1) numberOfDays = 1;
-        }
-        
-        // Calculate total with duration
-        totalCost = roomPrice * numberOfDays;
-        
-        // Add features (each costs 1)
-        if (feature1.checked) totalCost += 1; // Minibar
-        if (feature2.checked) totalCost += 1; // TV-satellite
-        if (feature3.checked) totalCost += 1; // Gym
-        
-        // Update the total cost field
-        totalCostInput.value = totalCost;
-    }
-
-    // Function to validate the dates
-    function validateDates() {
-        if (!startDate.value || !endDate.value) {
-            alert('Please select both check-in and check-out dates.');
-            return false;
-        }
-
-        const startDateValue = new Date(startDate.value);
-        const endDateValue = new Date(endDate.value);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        // Check if start date is in the past
-        if (startDateValue < today) {
-            alert('The check-in date cannot be in the past.');
-            return false;
-        }
-        
-        // Check if end date is after start date
-        if (endDateValue <= startDateValue) {
-            alert('The check-out date must be after the check-in date.');
-            return false;
-        }
-
-        // Get selected room type to check availability
-        const selectedRoom = roomSelect.value;
-        const roomCalendar = document.querySelector(`#${selectedRoom.toLowerCase()} .booked-dates`);
-        
-        if (!roomCalendar) {
-            console.log('Room calendar not found for room:', selectedRoom);
-            // Return true if we can't find the calendar - this allows booking to proceed
-            return true;
-        }
-
-        // Get all booked dates for the selected room
-        const bookedDates = roomCalendar.querySelectorAll('.booked');
-        const selectedDates = [];
-        
-        // Create array of selected dates
-        let currentDate = new Date(startDateValue);
-        while (currentDate <= endDateValue) {
-            selectedDates.push(currentDate.getDate());
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-        // Check if any selected date is booked
-        for (let bookedDate of bookedDates) {
-            const bookedDay = parseInt(bookedDate.textContent);
-            if (selectedDates.includes(bookedDay)) {
-                alert('One or more selected dates are already booked. Please choose different dates.');
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    // Add event listeners for all elements that affect the total cost
-    roomSelect.addEventListener('change', updateTotalCost);
-    feature1.addEventListener('change', updateTotalCost);
-    feature2.addEventListener('change', updateTotalCost);
-    feature3.addEventListener('change', updateTotalCost);
-    startDate.addEventListener('change', updateTotalCost);
-    endDate.addEventListener('change', updateTotalCost);
-
-    // Form submission handler
-    bookingForm.addEventListener('submit', function(event) {
-        event.preventDefault();
-        // Verifica si validateDates está disponible
-        console.log('validateDates function:', typeof validateDates);
-        // Validate dates before submitting
-        if (!validateDates()) {
-            return;
-        }
-        
-        // Validate required fields
+    // Function to enable or disable the submit button based on form validity
+    
+    function validateForm() {
         const guestName = document.getElementById('guestName');
         const transferCode = document.getElementById('transferCode');
         
-        if (!guestName || !guestName.value.trim()) {
-            alert('Please enter your name.');
-            return;
+        if (guestName.value.trim() && transferCode.value.trim() && totalCostInput.value > 0) {
+            submitButton.disabled = false; // Habilitar el botón de envío
+        } else {
+            submitButton.disabled = true; // Deshabilitar el botón de envío
         }
-        
-        if (!transferCode || !transferCode.value.trim()) {
-            alert('Please enter a transfer code.');
+    }
+
+    // Call validateForm() as soon as the page is loaded to check the initial state of the form
+    validateForm();
+    
+//-----------Llamar a la función de validación cada vez que cambie el costo total. MIRARVESTO
+    totalCostInput.addEventListener('change', validateForm);
+    
+
+    // Event listener for form validation
+    const guestName = document.getElementById('guestName');
+    const transferCode = document.getElementById('transferCode');
+    if (guestName) guestName.addEventListener('input', validateForm);
+    if (transferCode) transferCode.addEventListener('input', validateForm);
+
+    // Function to update selected features and calculate total cost
+    function updateTotalCost() {
+        const roomPrice = parseInt(roomSelect.selectedOptions[0].getAttribute('data-price'));
+        // Get the start and end date
+        const startDateObj = new Date(startDate.value);
+        const endDateObj = new Date(endDate.value);
+        // Calculate the number of days
+        const days = (endDateObj - startDateObj) / (1000 * 60 * 60 * 24); // Convert from milliseconds to days
+        // Default total cost is room price * number of days
+        let totalCost = roomPrice * days;
+
+        if (isNaN(days) || days <= 0) {
+            console.error('Invalid dates or duration');
+            totalCostInput.value = 0;  // Reset the cost to 0 if dates are invalid
             return;
         }
 
-        // Disable submit button and show loading state
-        const submitButton = bookingForm.querySelector('button[type="submit"]');
+        // Add cost for selected features
+        if (feature1.checked) totalCost += 1;  // Minibar
+        if (feature2.checked) totalCost += 1;  // TV-satellite
+        if (feature3.checked) totalCost += 1;  // Gym
+
+        // Update the total cost input field
+        totalCostInput.value = totalCost;
+
+        // Optionally log the total cost for debugging
+        //console.log('Total Cost:', totalCost);
+    }
+
+    // Event listeners to update the total cost when the room, dates, or features are changed
+    roomSelect.addEventListener('change', updateTotalCost);
+    startDate.addEventListener('change', updateTotalCost);
+    endDate.addEventListener('change', updateTotalCost);
+    feature1.addEventListener('change', updateTotalCost);
+    feature2.addEventListener('change', updateTotalCost);
+    feature3.addEventListener('change', updateTotalCost);
+
+    // Basic UI Updates: Example of showing selected room features dynamically
+    function updateSelectedFeatures() {
+        let features = [];
+        if (feature1.checked) features.push('Minibar');
+        if (feature2.checked) features.push('TV-satellite');
+        if (feature3.checked) features.push('Gym');
+        console.log('Selected features:', features); // Optionally log selected features
+    }
+
+    // Event listeners to dynamically show selected features
+    feature1.addEventListener('change', updateSelectedFeatures);
+    feature2.addEventListener('change', updateSelectedFeatures);
+    feature3.addEventListener('change', updateSelectedFeatures);
+
+    // Form submission handler (AJAX)
+    bookingForm.addEventListener('submit', function(event) {
+        event.preventDefault(); 
+
+        console.log("Start Date (Frontend):", startDate.value);
+        console.log("End Date (Frontend):", endDate.value);
+    
+        // Disable submit button to prevent multiple submissions
         submitButton.disabled = true;
         submitButton.textContent = 'Processing...';
-        
-        // Create FormData object
+
+        // Send the form data to the server (using FormData)
         const formData = new FormData(bookingForm);
-        
-        // Make POST request to booking.php
+
+        // Fetch request to handle the booking process (with transferCode verification)
         fetch('booking.php', {
             method: 'POST',
             body: formData
         })
         .then(response => response.json())
         .then(data => {
+            console.log(data);
             if (data.status === 'success') {
-                alert('Booking successful!');
-                window.location.href = 'index.php';
+                // Handle successful booking confirmation (you can display a message, redirect, etc.)
+                alert('Booking Successful! Thank you for choosing our hotel.');
+                window.location.href = 'index.php'; // Redirect to a confirmation or home page
             } else {
-                alert(data.message || 'Booking failed. Please try again.');
+                // Handle errors (show error message)
+                alert(data.message || 'There was an error processing your booking. Please try again.');
             }
         })
         .catch(error => {
@@ -161,17 +129,16 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('There was an error processing your booking. Please try again.');
         })
         .finally(() => {
-            // Re-enable the submit button
+            // Re-enable submit button
             submitButton.disabled = false;
             submitButton.textContent = 'Book Now';
         });
     });
 
-    // Initialize total cost when page loads
+    // Initialize form validation on page load
+    validateForm();
+
+    // Initialize total cost calculation on page load
     updateTotalCost();
-    
-    // Set minimum dates for date inputs
-    const today = new Date().toISOString().split('T')[0];
-    startDate.min = today;
-    endDate.min = today;
 });
+

@@ -18,6 +18,7 @@ try {
     exit();
 }
 
+// Function to generate transfer code (external API)
 function generateTransferCode($apiKey, $amount)
 {
     $client = new Client(['verify' => false]);
@@ -35,10 +36,11 @@ function generateTransferCode($apiKey, $amount)
 
         return isset($data['transferCode']) ? $data['transferCode'] : null;
     } catch (ClientException $e) {
-        return null;
+        return null; // Handle error
     }
 }
 
+// Function to check room booking availability
 function checkBookingAvailability($roomId, $startDate, $endDate, $database)
 {
     $query = 'SELECT * FROM Bookings WHERE RoomID = :roomId AND ((CheckInDate <= :endDate AND CheckOutDate >= :startDate))';
@@ -48,6 +50,7 @@ function checkBookingAvailability($roomId, $startDate, $endDate, $database)
     return $stmt->rowCount() == 0; // If no bookings, dates are available
 }
 
+// Function to check transfer code validity
 function checkTransferCode($transferCode, $totalCost)
 {
     $client = new Client(['verify' => false]);
@@ -63,22 +66,28 @@ function checkTransferCode($transferCode, $totalCost)
         $body = (string) $response->getBody();
         $data = json_decode($body, true);
 
-        //-------------var_dump($data);
-
-        return isset($data['status']) && $data['status'] == 'success'; // Verifies transfer code
+        // Check the response for a valid status
+        if (isset($data['status']) && $data['status'] == 'success') {
+            return true;
+        }
     } catch (ClientException $e) {
+        // Handle error gracefully
+        error_log("Error validating transfer code: " . $e->getMessage());
         return false;
     }
+
+    return false;
 }
 
+// Function to process the booking and payment
 function processBooking($transferCode, $roomId, $guestName, $startDate, $endDate, $totalCost, $database)
 {
-    // Step 1: Insert booking into database
     try {
+        // Step 1: Insert booking into database
         $stmt = $database->prepare("INSERT INTO Bookings (RoomID, GuestName, CheckInDate, CheckOutDate, TotalCost, TransferCode) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$roomId, $guestName, $startDate, $endDate, $totalCost, $transferCode]);
 
-        // Step 2: Process payment and generate JSON receipt
+        // Step 2: Process payment
         $client = new Client(['verify' => false]);
         $response = $client->request('POST', 'https://www.yrgopelago.se/centralbank/deposit', [
             'form_params' => [
@@ -90,9 +99,8 @@ function processBooking($transferCode, $roomId, $guestName, $startDate, $endDate
         $body = (string) $response->getBody();
         $data = json_decode($body, true);
 
-        // Check if payment was successful
         if (isset($data['status']) && $data['status'] == 'success') {
-            // Generate a JSON receipt
+            // Payment success - return booking details
             $bookingDetails = [
                 'roomId' => $roomId,
                 'guestName' => $guestName,
@@ -101,119 +109,110 @@ function processBooking($transferCode, $roomId, $guestName, $startDate, $endDate
                 'totalCost' => $totalCost,
                 'transferCode' => $transferCode
             ];
-            file_put_contents('booking_receipt.json', json_encode($bookingDetails));
 
-            // Redirect to the index page after successful booking
-            header('Location: index.php');
-            exit();
+            return $bookingDetails; // Return booking details
         } else {
-            return false; // Payment failed
+            return null; // Payment failed
         }
     } catch (Exception $e) {
-        return false; // DB or payment failure
+        return null; // DB or payment failure
     }
 }
 
-// If the form is submitted
+// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Collect form data
+    $room = $_POST['room'] ?? '';
+    $start_date = $_POST['start-date'] ?? '';
+    $end_date = $_POST['end-date'] ?? '';
+    $guestName = $_POST['guestName'] ?? '';
+    $transferCode = $_POST['transferCode'] ?? '';
+    $totalCost = $_POST['totalCost'] ?? 0;
 
-    // Collect form data safely using isset to avoid warnings
-    $room = isset($_POST['room']) ? $_POST['room'] : '';
-    $start_date = isset($_POST['start-date']) ? $_POST['start-date'] : '';
-    $end_date = isset($_POST['end-date']) ? $_POST['end-date'] : '';
-    $guestName = isset($_POST['guestName']) ? $_POST['guestName'] : '';
-    $transferCode = isset($_POST['transferCode']) ? $_POST['transferCode'] : '';
-    $totalCost = isset($_POST['totalCost']) ? $_POST['totalCost'] : 0;
+    // --------------------------------- Debugging and trim transfer code
+    $transferCode = trim($transferCode); // Trim any leading/trailing spaces
+    error_log('Trimmed transferCode: ' . $transferCode);
 
-    // Collect selected features (Minibar, TV-satellite, Gym)
-    $selectedFeatures = [];
-    if (isset($_POST['feature1'])) {
-        $selectedFeatures[] = 'Minibar';
-    }
-    if (isset($_POST['feature2'])) {
-        $selectedFeatures[] = 'TV-satellite';
-    }
-    if (isset($_POST['feature3'])) {
-        $selectedFeatures[] = 'Gym';
-    }
+    // --------------------------------- Validación de Fechas
+    $startDateObj = DateTime::createFromFormat('Y-m-d', $start_date);
+    $endDateObj = DateTime::createFromFormat('Y-m-d', $end_date);
 
-    // ----------Depuración: Ver los valores de las variables recibidas del formulario
-    //var_dump($room, $start_date, $end_date, $guestName, $transferCode, $totalCost, $selectedFeatures);
-
-    // Validate that all necessary fields are present
-    if (empty($room) || empty($start_date) || empty($end_date) || empty($guestName) || empty($transferCode)) {
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'All fields are required.'
-        ]);
+    if (!$startDateObj || !$endDateObj) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid date format. Please use YYYY-MM-DD.']);
         exit();
     }
 
-    // Room data map (base cost per room)
+    if ($startDateObj > $endDateObj) {
+        echo json_encode(['status' => 'error', 'message' => 'The start date cannot be later than the end date.']);
+        exit();
+    }
+
+    // Collect selected features
+    $selectedFeatures = [];
+    if (isset($_POST['feature1'])) $selectedFeatures[] = ['name' => 'Minibar', 'cost' => 1];
+    if (isset($_POST['feature2'])) $selectedFeatures[] = ['name' => 'TV-satellite', 'cost' => 1];
+    if (isset($_POST['feature3'])) $selectedFeatures[] = ['name' => 'Gym', 'cost' => 1];
+
+    // Validate required fields
+    if (empty($room) || empty($start_date) || empty($end_date) || empty($guestName) || empty($transferCode)) {
+        echo json_encode(['status' => 'error', 'message' => 'All fields are required.']);
+        exit();
+    }
+
+    // Room ID map
     $roomIdMap = [
         'Budget' => ['id' => 1, 'name' => 'Code and Rest (Simple)', 'cost' => 1],
         'Standard' => ['id' => 2, 'name' => 'Syntax & Serenity (Medium)', 'cost' => 2],
         'Luxury' => ['id' => 3, 'name' => 'Elite & Escape (Sublime)', 'cost' => 4]
     ];
 
-    // Check if the selected room is valid
+    // --------------------------------- Debugging the transfer code
+    error_log('Received transferCode: ' . $transferCode);
+
+    // Validate selected room
     if (!isset($roomIdMap[$room])) {
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'Invalid room selection.'
-        ]);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid room selection.']);
         exit();
     }
 
-    // Room data from the map
+    // Check room availability
     $roomData = $roomIdMap[$room];
     $roomId = $roomData['id'];
-
-    // Step 1: Check availability of dates
     if (!checkBookingAvailability($roomId, $start_date, $end_date, $database)) {
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'The selected dates are already booked.'
-        ]);
+        echo json_encode(['status' => 'error', 'message' => 'The selected dates are already booked.']);
         exit();
     }
 
-    // Step 2: Validate transfer code
+    // Validate transfer code
     if (!checkTransferCode($transferCode, $totalCost)) {
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'Invalid or incorrect transfer code.'
-        ]);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid transfer code.']);
         exit();
     }
 
-    // Step 3: Process booking and payment
-    $paymentSuccess = processBooking($transferCode, $roomId, $guestName, $start_date, $end_date, $totalCost, $database);
-
-    if (!$paymentSuccess) {
-        echo json_encode([
-            'status' => 'error',
-            'message' => 'Payment failed or an error occurred. Please try again.'
-        ]);
+    // Process the booking
+    $bookingDetails = processBooking($transferCode, $roomId, $guestName, $start_date, $end_date, $totalCost, $database);
+    if (!$bookingDetails) {
+        echo json_encode(['status' => 'error', 'message' => 'Payment failed or an error occurred. Please try again.']);
         exit();
     }
 
-    // Step 4: Return success response
+    // Successful booking response with all required data
     $response = [
         'status' => 'success',
-        'island' => 'Kosrae',
-        'hotel' => 'Kosrae-Lagoon',
+        'island' => 'Kosrae', // Hardcoded for your case, change if needed
+        'hotel' => 'Kosrae Lagoon',
         'arrival_date' => $start_date,
         'departure_date' => $end_date,
         'total_cost' => $totalCost,
-        'stars' => $roomData['cost'],
+        'stars' => 4, // Can be dynamic based on your hotel’s rating
         'features' => $selectedFeatures,
         'additional_info' => [
-            'greeting' => 'Thank you for choosing Kosrae Lagoon Hotel!',
-            'imageUrl' => 'https://upload.wikimedia.org/wikipedia/commons/e/e2/Hotel_Boscolo_Exedra_Nice.jpg'
+            'greeting' => 'Thank you for choosing Kosrae Lagoon!',
+            'imageUrl' => 'https://example.com/images/kosrae-hotel.jpg'
         ]
     ];
 
-    // Return the response as JSON
+    // Send the JSON response
     echo json_encode($response);
+    exit();
 }
