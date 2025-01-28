@@ -1,0 +1,10 @@
+.env
+.env.backup
+.env.production
+database
+Kosrae_lagoon.db
+vendor
+.DS_Store
+database
+error.log
+
