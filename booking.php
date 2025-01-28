@@ -31,8 +31,8 @@ function generateTransferCode($apiKey, $amount)
             ]
         ]);
 
-        $body = (string) $response->getBody();
-        $data = json_decode($body, true);
+        // Use getContents() to get the response body
+        $data = json_decode($response->getBody()->getContents(), true);
 
         return isset($data['transferCode']) ? $data['transferCode'] : null;
     } catch (ClientException $e) {
@@ -63,8 +63,8 @@ function checkTransferCode($transferCode, $totalCost)
             ]
         ]);
 
-        $body = (string) $response->getBody();
-        $data = json_decode($body, true);
+        // Use getContents() to get the response body
+        $data = json_decode($response->getBody()->getContents(), true);
 
         // Check the response for a valid status
         if (isset($data['status']) && $data['status'] == 'success') {
@@ -96,8 +96,9 @@ function processBooking($transferCode, $roomId, $guestName, $startDate, $endDate
             ]
         ]);
 
-        $body = (string) $response->getBody();
-        $data = json_decode($body, true);
+        // Use getContents() to get the response body
+        $data = json_decode($response->getBody()->getContents(), true);
+
 
         if (isset($data['status']) && $data['status'] == 'success') {
             // Payment success - return booking details
@@ -130,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $totalCost = $_POST['totalCost'] ?? 0;
 
     // --------------------------------- Debugging and trim transfer code
-    $transferCode = trim($transferCode); // Trim any leading/trailing spaces
+    $transferCode = trim($transferCode);
     error_log('Trimmed transferCode: ' . $transferCode);
 
     // --------------------------------- Validación de Fechas
