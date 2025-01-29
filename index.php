@@ -3,10 +3,16 @@
 declare(strict_types=1);
 require_once __DIR__ . "/vendor/autoload.php";
 require_once __DIR__ . '/header.php';
+require_once __DIR__ . '/calendar.php'; // Include the calendar function
 
 use GuzzleHttp\Client;
 
 $database = new PDO('sqlite:Kosrae_lagoon.db');
+
+$bookedDaysBudget = [1, 3, 9, 10, 11, 25, 26];
+$bookedDaysLuxury = [2, 14, 15, 16, 17, 23];
+$bookedDaysPremium = [3, 8, 13, 17, 24];
+
 ?>
 
 <!-- Header Section -->
@@ -18,7 +24,6 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
         <div class="press-hotel">
             <img src="images/hotel-night3.jpg" alt="micronesia">
             <h2>A wonderful place far away from civilization. Your paradise.</h2>
-            <h3>&starf;&starf;&starf;</h3>
         </div>
     </div>
 </header>
@@ -107,8 +112,6 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
     </section>
 
     <!-- Rooms Section -->
-    </section>
-    <!-- Rooms Section -->
     <section class="rooms">
         <h2>Our Rooms</h2>
 
@@ -123,46 +126,7 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
             </div>
 
             <!-- Booking Calendar -->
-            <ul class="booked-dates">
-                <li class="day-header">M</li>
-                <li class="day-header">T</li>
-                <li class="day-header">W</li>
-                <li class="day-header">T</li>
-                <li class="day-header">F</li>
-                <li class="day-header">S</li>
-                <li class="day-header">S</li>
-                <li class="booked">1</li>
-                <li class="booked">2</li>
-                <li class="booked">3</li>
-                <li>4</li>
-                <li>5</li>
-                <li>6</li>
-                <li>7</li>
-                <li>8</li>
-                <li class="booked">9</li>
-                <li class="booked">10</li>
-                <li class="booked">11</li>
-                <li>12</li>
-                <li>13</li>
-                <li>14</li>
-                <li>15</li>
-                <li class="booked">16</li>
-                <li class="booked">17</li>
-                <li>18</li>
-                <li>19</li>
-                <li>20</li>
-                <li>21</li>
-                <li>22</li>
-                <li class="booked">23</li>
-                <li class="booked">24</li>
-                <li class="booked">25</li>
-                <li class="booked">26</li>
-                <li>27</li>
-                <li>28</li>
-                <li>29</li>
-                <li>30</li>
-                <li>31</li>
-            </ul>
+            <?php echo generateCalendar($bookedDaysBudget); ?>
         </article>
 
         <!-- Repeat for other rooms -->
@@ -175,46 +139,8 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
                 <p>Discover Buffer & Balance: A harmonious blend of modern tech and relaxation. Premium workspace, rainfall shower, and deluxe comfort for the discerning professional.</p>
             </div>
 
-            <ul class="booked-dates">
-                <li class="day-header">M</li>
-                <li class="day-header">T</li>
-                <li class="day-header">W</li>
-                <li class="day-header">T</li>
-                <li class="day-header">F</li>
-                <li class="day-header">S</li>
-                <li class="day-header">S</li>
-                <li>1</li>
-                <li class="booked">2</li>
-                <li class="booked">3</li>
-                <li>4</li>
-                <li>5</li>
-                <li>6</li>
-                <li>7</li>
-                <li>8</li>
-                <li>9</li>
-                <li>10</li>
-                <li>11</li>
-                <li>12</li>
-                <li>13</li>
-                <li class="booked">14</li>
-                <li class="booked">15</li>
-                <li class="booked">16</li>
-                <li class="booked">17</li>
-                <li>18</li>
-                <li>19</li>
-                <li>20</li>
-                <li>21</li>
-                <li>22</li>
-                <li class="booked">23</li>
-                <li>24</li>
-                <li>25</li>
-                <li>26</li>
-                <li>27</li>
-                <li>28</li>
-                <li>29</li>
-                <li>30</li>
-                <li>31</li>
-            </ul>
+            <!-- Booking Calendar -->
+            <?php echo generateCalendar($bookedDaysLuxury); ?>
         </article>
 
         <article class="room" id="premium">
@@ -226,49 +152,14 @@ $database = new PDO('sqlite:Kosrae_lagoon.db');
                 <p>Experience Premium & Majesty: Our luxurious sanctuary offers panoramic views, private spa, smart automation, and premium amenities for the ultimate digital detox retreat..</p>
             </div>
 
-            <ul class="booked-dates">
-                <li class="day-header">M</li>
-                <li class="day-header">T</li>
-                <li class="day-header">W</li>
-                <li class="day-header">T</li>
-                <li class="day-header">F</li>
-                <li class="day-header">S</li>
-                <li class="day-header">S</li>
-                <li>1</li>
-                <li>2</li>
-                <li class="booked">3</li>
-                <li>4</li>
-                <li>5</li>
-                <li>6</li>
-                <li>7</li>
-                <li class="booked">8</li>
-                <li>9</li>
-                <li>10</li>
-                <li>11</li>
-                <li>12</li>
-                <li class="booked">13</li>
-                <li>14</li>
-                <li>15</li>
-                <li>16</li>
-                <li class="booked">17</li>
-                <li>18</li>
-                <li>19</li>
-                <li>20</li>
-                <li>21</li>
-                <li>22</li>
-                <li class="booked">23</li>
-                <li>24</li>
-                <li>25</li>
-                <li>26</li>
-                <li>27</li>
-                <li>28</li>
-                <li>29</li>
-                <li>30</li>
-                <li>31</li>
-            </ul>
+            <!-- Booking Calendar -->
+            <?php echo generateCalendar($bookedDaysPremium); ?>
         </article>
     </section>
 </main>
+
+<!-- Include your script.js file -->
+<script src="script.js"></script>
 
 <?php
 require_once(__DIR__ . '/footer.php');

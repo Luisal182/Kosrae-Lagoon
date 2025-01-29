@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
- 
+
     const roomSelect = document.getElementById('room');
     const feature1 = document.getElementById('feature1');
     const feature2 = document.getElementById('feature2');
@@ -17,24 +17,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to enable or disable the submit button based on form validity
-    
     function validateForm() {
         const guestName = document.getElementById('guestName');
         const transferCode = document.getElementById('transferCode');
         
         if (guestName.value.trim() && transferCode.value.trim() && totalCostInput.value > 0) {
-            submitButton.disabled = false; // Habilitar el botón de envío
+            submitButton.disabled = false; // Enable the submit button
         } else {
-            submitButton.disabled = true; // Deshabilitar el botón de envío
+            submitButton.disabled = true; // Disable the submit button
         }
     }
 
     // Call validateForm() as soon as the page is loaded to check the initial state of the form
     validateForm();
     
-//-----------Llamar a la función de validación cada vez que cambie el costo total. MIRARVESTO
+    // Call validateForm each time the total cost changes
     totalCostInput.addEventListener('change', validateForm);
-    
 
     // Event listener for form validation
     const guestName = document.getElementById('guestName');
@@ -43,21 +41,44 @@ document.addEventListener('DOMContentLoaded', function() {
     if (transferCode) transferCode.addEventListener('input', validateForm);
 
     // Function to update selected features and calculate total cost
-    function updateTotalCost() {
+    window.updateTotalCost = function updateTotalCost() {
         const roomPrice = parseInt(roomSelect.selectedOptions[0].getAttribute('data-price'));
-        // Get the start and end date
-        const startDateObj = new Date(startDate.value);
-        const endDateObj = new Date(endDate.value);
-        // Calculate the number of days
-        const days = (endDateObj - startDateObj) / (1000 * 60 * 60 * 24); // Convert from milliseconds to days
-        // Default total cost is room price * number of days
-        let totalCost = roomPrice * days;
+        const startDateValue = startDate.value;
+        const endDateValue = endDate.value;
 
-        if (isNaN(days) || days <= 0) {
-            console.error('Invalid dates or duration');
-            totalCostInput.value = 0;  // Reset the cost to 0 if dates are invalid
+        console.log(`Start Date Value: ${startDateValue}`);
+        console.log(`End Date Value: ${endDateValue}`);
+        
+        // Ensure both dates are selected
+        if (!startDateValue || !endDateValue) {
+            console.error('Start date or end date is not selected');
+            totalCostInput.value = 0;  // Reset the cost to 0 if dates are not selected
+            validateForm(); // Re-validate form as the cost has changed
             return;
         }
+        
+        const startDateObj = new Date(startDateValue);
+        const endDateObj = new Date(endDateValue);
+        
+        console.log(`Start Date Object: ${startDateObj}`);
+        console.log(`End Date Object: ${endDateObj}`);
+        
+        // Calculate the number of days
+        const timeDifference = endDateObj - startDateObj;
+        const days = timeDifference / (1000 * 60 * 60 * 24); // Convert from milliseconds to days
+
+        console.log(`Days: ${days}`);
+        
+        // Validate the dates and duration
+        if (isNaN(days) || days <= 0 || startDateObj >= endDateObj) {
+            console.error('Invalid dates or duration');
+            totalCostInput.value = 0;  // Reset the cost to 0 if dates are invalid
+            validateForm(); // Re-validate form as the cost has changed
+            return;
+        }
+
+        // Default total cost is room price * number of days
+        let totalCost = roomPrice * days;
 
         // Add cost for selected features
         if (feature1.checked) totalCost += 1;  // Minibar
@@ -67,8 +88,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update the total cost input field
         totalCostInput.value = totalCost;
 
-        // Optionally log the total cost for debugging
-        //console.log('Total Cost:', totalCost);
+        // Log the total cost for debugging
+        console.log('Total Cost:', totalCost);
+        
+        // Re-validate form as the cost has changed
+        validateForm();
     }
 
     // Event listeners to update the total cost when the room, dates, or features are changed
@@ -141,4 +165,3 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize total cost calculation on page load
     updateTotalCost();
 });
-

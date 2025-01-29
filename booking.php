@@ -19,24 +19,25 @@ try {
 }
 
 // Function to generate transfer code (external API)
-function generateTransferCode($apiKey, $amount)
+function generateTransferCode($user, $apiKey, $amount)
 {
     $client = new Client(['verify' => false]);
 
     try {
         $response = $client->request('POST', 'https://www.yrgopelago.se/centralbank/withdraw', [
             'form_params' => [
-                'apiKey' => $apiKey,
+                'user' => $user,
+                'api_key' => $apiKey,
                 'amount' => $amount
             ]
         ]);
 
-        // Use getContents() to get the response body
         $data = json_decode($response->getBody()->getContents(), true);
 
-        return isset($data['transferCode']) ? $data['transferCode'] : null;
+        return $data['transferCode'] ?? null;
     } catch (ClientException $e) {
-        return null; // Handle error
+        error_log("Error generating transfer code: " . $e->getMessage());
+        return null;
     }
 }
 
@@ -51,7 +52,7 @@ function checkBookingAvailability($roomId, $startDate, $endDate, $database)
 }
 
 // Function to check transfer code validity
-function checkTransferCode($transferCode, $totalCost)
+function checkTransferCodeValidity($transferCode, $totalCost)
 {
     $client = new Client(['verify' => false]);
 
@@ -59,28 +60,21 @@ function checkTransferCode($transferCode, $totalCost)
         $response = $client->request('POST', 'https://www.yrgopelago.se/centralbank/transferCode', [
             'form_params' => [
                 'transferCode' => $transferCode,
-                'totalCost' => $totalCost
+                'totalcost' => $totalCost
             ]
         ]);
 
-        // Use getContents() to get the response body
         $data = json_decode($response->getBody()->getContents(), true);
 
-        // Check the response for a valid status
-        if (isset($data['status']) && $data['status'] == 'success') {
-            return true;
-        }
+        return isset($data['status']) && $data['status'] == 'success';
     } catch (ClientException $e) {
-        // Handle error gracefully
         error_log("Error validating transfer code: " . $e->getMessage());
         return false;
     }
-
-    return false;
 }
 
 // Function to process the booking and payment
-function processBooking($transferCode, $roomId, $guestName, $startDate, $endDate, $totalCost, $database)
+function processBooking($user, $transferCode, $roomId, $guestName, $startDate, $endDate, $totalCost, $database)
 {
     try {
         // Step 1: Insert booking into database
@@ -91,18 +85,17 @@ function processBooking($transferCode, $roomId, $guestName, $startDate, $endDate
         $client = new Client(['verify' => false]);
         $response = $client->request('POST', 'https://www.yrgopelago.se/centralbank/deposit', [
             'form_params' => [
+                'user' => $user,
                 'transferCode' => $transferCode,
-                'totalCost' => $totalCost
+                'numberOfDays' => (new DateTime($endDate))->diff(new DateTime($startDate))->days
             ]
         ]);
 
-        // Use getContents() to get the response body
         $data = json_decode($response->getBody()->getContents(), true);
-
 
         if (isset($data['status']) && $data['status'] == 'success') {
             // Payment success - return booking details
-            $bookingDetails = [
+            return [
                 'roomId' => $roomId,
                 'guestName' => $guestName,
                 'startDate' => $startDate,
@@ -110,13 +103,12 @@ function processBooking($transferCode, $roomId, $guestName, $startDate, $endDate
                 'totalCost' => $totalCost,
                 'transferCode' => $transferCode
             ];
-
-            return $bookingDetails; // Return booking details
         } else {
             return null; // Payment failed
         }
     } catch (Exception $e) {
-        return null; // DB or payment failure
+        error_log("Error processing booking: " . $e->getMessage());
+        return null;
     }
 }
 
@@ -129,12 +121,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $guestName = $_POST['guestName'] ?? '';
     $transferCode = $_POST['transferCode'] ?? '';
     $totalCost = $_POST['totalCost'] ?? 0;
+    $user = 'your-username';
 
     // --------------------------------- Debugging and trim transfer code
     $transferCode = trim($transferCode);
     error_log('Trimmed transferCode: ' . $transferCode);
 
-    // --------------------------------- Validación de Fechas
+    // Validate date format
     $startDateObj = DateTime::createFromFormat('Y-m-d', $start_date);
     $endDateObj = DateTime::createFromFormat('Y-m-d', $end_date);
 
@@ -185,13 +178,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Validate transfer code
-    if (!checkTransferCode($transferCode, $totalCost)) {
+    if (!checkTransferCodeValidity($transferCode, $totalCost)) {
         echo json_encode(['status' => 'error', 'message' => 'Invalid transfer code.']);
         exit();
     }
 
-    // Process the booking
-    $bookingDetails = processBooking($transferCode, $roomId, $guestName, $start_date, $end_date, $totalCost, $database);
+    // Process the booking and payment
+    $bookingDetails = processBooking($user, $transferCode, $roomId, $guestName, $start_date, $end_date, $totalCost, $database);
     if (!$bookingDetails) {
         echo json_encode(['status' => 'error', 'message' => 'Payment failed or an error occurred. Please try again.']);
         exit();
