@@ -57,10 +57,26 @@ function checkTransferCodeValidity($transferCode, $totalCost)
     $client = new Client(['verify' => false]);
 
     try {
+
+        /* testing */
+        error_log("Transfer code: " . $transferCode, 4);
+        error_log("Total cost" . $totalCost);
+
+        // Prepare the curl request
+        $curlCommand = "curl -X POST 'https://www.yrgopelago.se/centralbank/transferCode' \\" . PHP_EOL;
+        $curlCommand .= "  -H 'Content-Type: application/x-www-form-urlencoded' \\" . PHP_EOL;
+        $curlCommand .= "  -d 'transferCode=" . $transferCode  . "&totalcost=" . $totalCost  . "'";
+
+        // Log the curl command
+        error_log("Equivalent curl request: " . $curlCommand);
+        /* end testing */
+
+
+
         $response = $client->request('POST', 'https://www.yrgopelago.se/centralbank/transferCode', [
             'form_params' => [
                 'transferCode' => $transferCode,
-                'totalcost' => $totalCost
+                'totalcost' =>  $totalCost
             ]
         ]);
 
@@ -81,15 +97,18 @@ function processBooking($user, $transferCode, $roomId, $guestName, $startDate, $
         $stmt = $database->prepare("INSERT INTO Bookings (RoomID, GuestName, CheckInDate, CheckOutDate, TotalCost, TransferCode) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$roomId, $guestName, $startDate, $endDate, $totalCost, $transferCode]);
 
+        //error_log("Step 2: Process payment start");  /////////------------------Quitar
         // Step 2: Process payment
         $client = new Client(['verify' => false]);
         $response = $client->request('POST', 'https://www.yrgopelago.se/centralbank/deposit', [
             'form_params' => [
-                'user' => $user,
+                'user' => "Luis",
                 'transferCode' => $transferCode,
                 'numberOfDays' => (new DateTime($endDate))->diff(new DateTime($startDate))->days
             ]
         ]);
+
+        //error_log("Step 2: Process payment FINISHED, response: " . $response->getBody()->getContents()); //////-------------QUITAR
 
         $data = json_decode($response->getBody()->getContents(), true);
 
