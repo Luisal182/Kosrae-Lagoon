@@ -71,8 +71,6 @@ function checkTransferCodeValidity($transferCode, $totalCost)
         error_log("Equivalent curl request: " . $curlCommand);
         /* end testing */
 
-
-
         $response = $client->request('POST', 'https://www.yrgopelago.se/centralbank/transferCode', [
             'form_params' => [
                 'transferCode' => $transferCode,
@@ -96,19 +94,15 @@ function processBooking($user, $transferCode, $roomId, $guestName, $startDate, $
         // Step 1: Insert booking into database
         $stmt = $database->prepare("INSERT INTO Bookings (RoomID, GuestName, CheckInDate, CheckOutDate, TotalCost, TransferCode) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$roomId, $guestName, $startDate, $endDate, $totalCost, $transferCode]);
-
-        //error_log("Step 2: Process payment start");  /////////------------------Quitar
         // Step 2: Process payment
         $client = new Client(['verify' => false]);
         $response = $client->request('POST', 'https://www.yrgopelago.se/centralbank/deposit', [
             'form_params' => [
-                'user' => "Luis",
+                'user' => $guestName,
                 'transferCode' => $transferCode,
                 'numberOfDays' => (new DateTime($endDate))->diff(new DateTime($startDate))->days
             ]
         ]);
-
-        //error_log("Step 2: Process payment FINISHED, response: " . $response->getBody()->getContents()); //////-------------QUITAR
 
         $data = json_decode($response->getBody()->getContents(), true);
 
@@ -212,12 +206,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Successful booking response with all required data
     $response = [
         'status' => 'success',
-        'island' => 'Kosrae', // Hardcoded for your case, change if needed
+        'island' => 'Kosrae', // Hardcoded in this  case, change if needed
         'hotel' => 'Kosrae Lagoon',
         'arrival_date' => $start_date,
         'departure_date' => $end_date,
         'total_cost' => $totalCost,
-        'stars' => 4, // Can be dynamic based on your hotel’s rating
+        'stars' => 4,
         'features' => $selectedFeatures,
         'additional_info' => [
             'greeting' => 'Thank you for choosing Kosrae Lagoon!',

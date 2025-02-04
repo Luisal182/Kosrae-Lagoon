@@ -158,9 +158,6 @@ $bookedDaysPremium = [3, 8, 13, 17, 24];
     </section>
 </main>
 
-<!-- Include your script.js file -->
-<script src="script.js"></script>
-
 <?php
 require_once(__DIR__ . '/footer.php');
 ?>

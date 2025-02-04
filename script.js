@@ -136,9 +136,9 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data);
+        .then(response => response.text())
+        .then(text => {
+            const data =JSON.parse(text);
             if (data.status === 'success') {
                 // Handle successful booking confirmation (you can display a message, redirect, etc.)
                 alert('Booking Successful! Thank you for choosing our hotel.');
