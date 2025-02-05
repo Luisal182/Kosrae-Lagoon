@@ -6,6 +6,9 @@ require __DIR__ . '/vendor/autoload.php';
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 
+// Response header to JSON
+header('Content-Type: application/json');
+
 // Database connection (ensure you have a valid SQLite or other DB connection)
 try {
     $database = new PDO('sqlite:Kosrae_lagoon.db');
@@ -57,20 +60,6 @@ function checkTransferCodeValidity($transferCode, $totalCost)
     $client = new Client(['verify' => false]);
 
     try {
-
-        /* testing */
-        error_log("Transfer code: " . $transferCode, 4);
-        error_log("Total cost" . $totalCost);
-
-        // Prepare the curl request
-        $curlCommand = "curl -X POST 'https://www.yrgopelago.se/centralbank/transferCode' \\" . PHP_EOL;
-        $curlCommand .= "  -H 'Content-Type: application/x-www-form-urlencoded' \\" . PHP_EOL;
-        $curlCommand .= "  -d 'transferCode=" . $transferCode  . "&totalcost=" . $totalCost  . "'";
-
-        // Log the curl command
-        error_log("Equivalent curl request: " . $curlCommand);
-        /* end testing */
-
         $response = $client->request('POST', 'https://www.yrgopelago.se/centralbank/transferCode', [
             'form_params' => [
                 'transferCode' => $transferCode,
@@ -94,6 +83,7 @@ function processBooking($user, $transferCode, $roomId, $guestName, $startDate, $
         // Step 1: Insert booking into database
         $stmt = $database->prepare("INSERT INTO Bookings (RoomID, GuestName, CheckInDate, CheckOutDate, TotalCost, TransferCode) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$roomId, $guestName, $startDate, $endDate, $totalCost, $transferCode]);
+
         // Step 2: Process payment
         $client = new Client(['verify' => false]);
         $response = $client->request('POST', 'https://www.yrgopelago.se/centralbank/deposit', [
@@ -136,9 +126,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $totalCost = $_POST['totalCost'] ?? 0;
     $user = 'your-username';
 
-    // --------------------------------- Debugging and trim transfer code
+    // Trim transfer code
     $transferCode = trim($transferCode);
-    error_log('Trimmed transferCode: ' . $transferCode);
 
     // Validate date format
     $startDateObj = DateTime::createFromFormat('Y-m-d', $start_date);
@@ -149,8 +138,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
 
-    if ($startDateObj > $endDateObj) {
-        echo json_encode(['status' => 'error', 'message' => 'The start date cannot be later than the end date.']);
+    if ($startDateObj >= $endDateObj) {
+        echo json_encode(['status' => 'error', 'message' => 'The start date cannot be later than or equal to the end date.']);
         exit();
     }
 
@@ -172,9 +161,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         'Standard' => ['id' => 2, 'name' => 'Syntax & Serenity (Medium)', 'cost' => 2],
         'Luxury' => ['id' => 3, 'name' => 'Elite & Escape (Sublime)', 'cost' => 4]
     ];
-
-    // --------------------------------- Debugging the transfer code
-    error_log('Received transferCode: ' . $transferCode);
 
     // Validate selected room
     if (!isset($roomIdMap[$room])) {
@@ -206,7 +192,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Successful booking response with all required data
     $response = [
         'status' => 'success',
-        'island' => 'Kosrae', // Hardcoded in this  case, change if needed
+        'island' => 'Kosrae', // Hardcoded in this case, change if needed
         'hotel' => 'Kosrae Lagoon',
         'arrival_date' => $start_date,
         'departure_date' => $end_date,
