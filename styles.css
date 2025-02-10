@@ -41,9 +41,8 @@ main {
     max-width: 100%;
     margin: 0 auto;
     width: 100%;
-    background: linear-gradient(to right, rgba(221, 228, 243, 0.6), rgba(219, 226, 242, 0.6)), url('images/Micro-hotel.webp') no-repeat right center;
+    background: linear-gradient(to right, rgba(180, 206, 245, 0.6), rgba(181, 202, 246, 0.6)), url('images/Micro-hotel.webp') no-repeat right center;
     background-size: cover; /* Make the background image cover the entire container */
-    /* Increase transparency by adjusting rgba values */
 }
 
 .booking-form {
@@ -61,6 +60,11 @@ main {
 label {
     font-weight: bold;
     color: #444;
+}
+
+label:hover {
+    color: #ed12e9; /* Change color on hover */
+    cursor: pointer; /* Change cursor to pointer */
 }
 
 input[type="date"],
