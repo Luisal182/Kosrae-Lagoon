@@ -6,8 +6,6 @@ require __DIR__ . '/vendor/autoload.php';
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 
-// Response header to JSON
-header('Content-Type: application/json');
 
 // Database connection (ensure you have a valid SQLite or other DB connection)
 try {
@@ -205,6 +203,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         ]
     ];
 
+    // Response header to JSON
+    header('Content-Type: application/json');
     // Send the JSON response
     echo json_encode($response);
     exit();

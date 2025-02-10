@@ -136,12 +136,13 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.text())
-        .then(text => {
-            const data =JSON.parse(text);
+        .then(response => response.json())
+        .then(data => {
+            console.log('**** data is %j' , data);
+            //const data =JSON.parse(text);
             if (data.status === 'success') {
                 // Handle successful booking confirmation (you can display a message, redirect, etc.)
-                alert('Booking Successful! Thank you for choosing our hotel.');
+                alert('Booking Successful! Thank you for choosing our hotel. Response from server: ' + JSON.stringify(data));
                 window.location.href = 'index.php'; // Redirect to a confirmation or home page
             } else {
                 // Handle errors (show error message)
